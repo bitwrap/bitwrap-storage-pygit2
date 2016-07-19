@@ -1,0 +1,4 @@
+cyclone==1.1
+service-identity==16.0.0
+cffi==1.7.0
+pygit2==0.24.0
