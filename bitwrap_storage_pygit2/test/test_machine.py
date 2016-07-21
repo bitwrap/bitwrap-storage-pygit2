@@ -34,4 +34,5 @@ class MachineTestCase(unittest.TestCase):
         }
 
         self.storage.commit(response)
+        self.storage.commit(response) # FIXME should be able to make 2 commits
         assert response['cache']['dib'] == self.storage.fetch('dib') 
