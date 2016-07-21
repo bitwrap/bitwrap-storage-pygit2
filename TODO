@@ -1,3 +1,3 @@
-Mon Jul 18 22:37:35 PDT 2016
+Wed Jul 20 19:56:56 PDT 2016
 
-WIP - integration testing with bitwrap-io
+WIP use 2 repos to segregate state_machine data from eventstore

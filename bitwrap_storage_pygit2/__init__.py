@@ -8,26 +8,31 @@ repo_root = os.environ.get(
     os.path.abspath(os.path.join(os.path.dirname(__file__), '../_repo/'))
 )
 
+eventstore_path = os.path.join(repo_root, 'eventstore')
+
+def staterepo(repo_name):
+    return os.path.join(repo_root, repo_name)
 
 class Storage(object):
 
     @staticmethod
     def truncate(repo_name):
         try:
-          shutil.rmtree(os.path.join(repo_root, repo_name))
+          shutil.rmtree(staterepo(repo_name))
+          shutil.rmtree(eventstore_path)
         except:
           pass
 
     @staticmethod
     def open(repo_name):
-        return Storage(os.path.join(repo_root, repo_name))
+        return Storage(staterepo(repo_name))
 
     def __init__(self, repo_path):
         self.path = repo_path
-        self.repo = init_repository(repo_path)
+        self.repo = init_repository(staterepo(repo_path))
+        self.eventstore = init_repository(eventstore_path)
 
     def commit(self, res):
-
         index = self.repo.index
         index.read()
 
@@ -46,17 +51,29 @@ class Storage(object):
         sender = msg['addresses']['sender']
         sender_email = sender + '@' + msg['signal']['schema']
 
-        # REVIEW: consider adding md5sum of payload as 4th arg
+        sender_actor = Signature(sender, sender_email)
+        target_actor = Signature(msg['addresses']['target'], 'system@bitwrap.io')
+
         self.repo.create_commit(
             'refs/heads/master',
-            Signature(sender, sender_email),
-            Signature('system', 'system@bitwrap.io'),
-            json.dumps([
-                msg['signal']['action'],
-                msg['addresses']['sender'],
-                msg['addresses']['target']
-            ]),
+            sender_actor,
+            target_actor,
+            msg['signal']['action'],
             index.write_tree(),
+            []
+        )
+
+        res['uuid'] = self.repo.head.target.__str__()
+
+        event_index = self.eventstore.index
+        event_index.read()
+
+        self.eventstore.create_commit(
+            'refs/heads/master',
+            sender_actor,
+            target_actor,
+            json.dumps(res),
+            event_index.write_tree(),
             []
         )
 
@@ -64,3 +81,7 @@ class Storage(object):
     def fetch(self, key):
         with open(os.path.join(self.path, key), 'r') as keystore:
             return json.load(keystore)
+
+    def fetch_event(self, event_index):
+        # TODO: read commit message from event repo
+        pass
