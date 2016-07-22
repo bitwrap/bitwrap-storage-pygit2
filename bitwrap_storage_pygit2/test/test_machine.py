@@ -12,9 +12,9 @@ class MachineTestCase(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def test_console(self):
+    def test_multiple_commits(self):
 
-        response = {
+        request = {
            'cache': {
                'control': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                'dib': [0, 0, 0, 0, 0, 0, 0, 2, 1, 1, 1, 2, 1],
@@ -33,6 +33,6 @@ class MachineTestCase(unittest.TestCase):
             }
         }
 
-        self.storage.commit(response)
-        self.storage.commit(response) # FIXME should be able to make 2 commits
-        assert response['cache']['dib'] == self.storage.fetch('dib') 
+        self.storage.commit(request)
+        self.storage.commit(request)
+        assert request['cache']['dib'] == self.storage.fetch('dib') 

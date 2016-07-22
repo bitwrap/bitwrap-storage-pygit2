@@ -2,13 +2,12 @@ import os
 import shutil
 import json
 from pygit2 import init_repository, Signature
+import pygit2
 
 repo_root = os.environ.get(
     'BITWRAP_REPO_PATH',
     os.path.abspath(os.path.join(os.path.dirname(__file__), '../_repo/'))
 )
-
-eventstore_path = os.path.join(repo_root, 'eventstore')
 
 def staterepo(repo_name):
     return os.path.join(repo_root, repo_name)
@@ -19,7 +18,6 @@ class Storage(object):
     def truncate(repo_name):
         try:
           shutil.rmtree(staterepo(repo_name))
-          shutil.rmtree(eventstore_path)
         except:
           pass
 
@@ -29,8 +27,7 @@ class Storage(object):
 
     def __init__(self, repo_path):
         self.path = repo_path
-        self.repo = init_repository(staterepo(repo_path))
-        self.eventstore = init_repository(eventstore_path)
+        self.repo = init_repository(self.path)
 
     def commit(self, res):
         index = self.repo.index
@@ -48,40 +45,36 @@ class Storage(object):
         index.write()
 
         msg = res['message']
+        schema = msg['signal']['schema']
+
         sender = msg['addresses']['sender']
-        sender_email = sender + '@' + msg['signal']['schema']
+        sender_email = sender + '@' + schema
 
-        sender_actor = Signature(sender, sender_email)
-        target_actor = Signature(msg['addresses']['target'], 'system@bitwrap.io')
+        target = msg['addresses']['target']
+        target_email = target + '@' + schema
 
-        self.repo.create_commit(
+        msg_hash = pygit2.hash(json.dumps(res)).__str__()
+
+        try:
+            head = self.repo.revparse_single('HEAD')
+            parents = [head.id]
+        except:
+            parents = []
+
+        oid = self.repo.create_commit(
             'refs/heads/master',
-            sender_actor,
-            target_actor,
-            msg['signal']['action'],
+            Signature(sender, sender_email),
+            Signature(target, target_email),
+            json.dumps([msg['signal']['action'], msg_hash]),
             index.write_tree(),
-            []
+            parents
         )
 
-        res['uuid'] = self.repo.head.target.__str__()
+        msg_uuid = self.repo.head.target.__str__()
 
-        event_index = self.eventstore.index
-        event_index.read()
-
-        self.eventstore.create_commit(
-            'refs/heads/master',
-            sender_actor,
-            target_actor,
-            json.dumps(res),
-            event_index.write_tree(),
-            []
-        )
+        return { 'oid': oid, 'hash': msg_hash, 'response': res }
 
         
     def fetch(self, key):
         with open(os.path.join(self.path, key), 'r') as keystore:
             return json.load(keystore)
-
-    def fetch_event(self, event_index):
-        # TODO: read commit message from event repo
-        pass
