@@ -29,7 +29,9 @@ class Storage(object):
         self.path = repo_path
         self.repo = init_repository(self.path)
 
-    def commit(self, res):
+    def commit(self, response):
+
+        res = response['event']
         index = self.repo.index
         index.read()
 
