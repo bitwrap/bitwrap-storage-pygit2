@@ -55,8 +55,6 @@ class Storage(object):
         target = msg['addresses']['target']
         target_email = target + '@' + schema
 
-        msg_hash = pygit2.hash(json.dumps(res)).__str__()
-
         try:
             head = self.repo.revparse_single('HEAD')
             parents = [head.id]
@@ -67,14 +65,14 @@ class Storage(object):
             'refs/heads/master',
             Signature(sender, sender_email),
             Signature(target, target_email),
-            json.dumps([msg['signal']['action'], msg_hash]),
+            json.dumps([msg['signal']['action'], response['hash']]),
             index.write_tree(),
             parents
         )
 
         msg_uuid = self.repo.head.target.__str__()
 
-        return { 'oid': oid, 'hash': msg_hash, 'response': res }
+        return { 'oid': oid, 'hash': response['hash'], 'response': res }
 
         
     def fetch(self, key):
