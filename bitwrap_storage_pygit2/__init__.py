@@ -72,7 +72,7 @@ class Storage(object):
 
         msg_uuid = self.repo.head.target.__str__()
 
-        return { 'oid': oid, 'hash': response['hash'], 'response': res }
+        return { 'oid': oid, 'hash': response['hash'], 'event': res }
 
         
     def fetch(self, key):
