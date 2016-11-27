@@ -61,18 +61,20 @@ class Storage(object):
         except:
             parents = []
 
+
+
         oid = self.repo.create_commit(
             'refs/heads/master',
             Signature(sender, sender_email),
             Signature(target, target_email),
-            json.dumps([msg['signal']['action'], response['hash']]),
+            json.dumps([msg['signal']['action'], response['hash'], response['oid'] ]),
             index.write_tree(),
             parents
         )
 
         msg_uuid = self.repo.head.target.__str__()
 
-        return { 'oid': oid, 'hash': response['hash'], 'event': res }
+        return { 'txn': oid, 'hash': response['hash'], 'oid': response['oid'], 'event': res }
 
         
     def fetch(self, key):

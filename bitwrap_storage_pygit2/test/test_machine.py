@@ -34,5 +34,5 @@ class MachineTestCase(unittest.TestCase):
         }
 
         self.storage.commit({ 'event': request, 'hash': 'fake-hash1', 'oid': 'fake-oid1' })
-        self.storage.commit({ 'event': request, 'hash': 'fake-hash2', 'oid': 'fake-oid2' })
+        res = self.storage.commit({ 'event': request, 'hash': 'fake-hash2', 'oid': 'fake-oid2' })
         assert request['cache']['dib'] == self.storage.fetch('dib') 
